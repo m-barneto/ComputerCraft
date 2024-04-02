@@ -147,14 +147,26 @@ function ShouldReturn()
     --return isLowOnFuel or emptySlots < 3
 end
 
+function PullItem(targetSlot)
+    -- Assumes already facing target chest
+    turtle.select(targetSlot)
+    local count = turtle.getItemCount()
+    while turtle.getItemCount() < 64 do
+        turtle.suck(1)
+        if turtle.getItemCount() ~= count + 1 then
+            break
+        end
+        count = count + 1
+    end
+end
+
 function Refuel()
-    turtle.select(1)
     -- Turn left, suck items
     print("sucking fuel")
     Left()
-    while turtle.getFuelLevel() < 5000 do
-        turtle.suck(64)
-        turtle.refuel(10)
+    while turtle.getFuelLevel() < 10000 do
+        PullItem(1)
+        turtle.refuel()
     end
     Right()
 end

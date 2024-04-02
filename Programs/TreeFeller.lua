@@ -63,6 +63,19 @@ function ChopTree()
     turtle.select(1)
 end
 
+function PullItem(targetSlot)
+    -- Assumes already facing target chest
+    turtle.select(targetSlot)
+    local count = turtle.getItemCount()
+    while turtle.getItemCount() < 64 do
+        turtle.suck(1)
+        if turtle.getItemCount() ~= count + 1 then
+            break
+        end
+        count = count + 1
+    end
+end
+
 function Refuel()
     turtle.turnRight()
     turtle.turnRight()
