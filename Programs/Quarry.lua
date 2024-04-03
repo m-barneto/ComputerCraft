@@ -1,7 +1,11 @@
+--region Navigation
 NORTH = 0
 EAST = 1
 SOUTH = 2
 WEST = 3
+
+StoppedPos = {x = 0, y = 0, z = 0, dir = NORTH}
+LocalPos = {x = 0, y = 0, z = 0, dir = NORTH}
 
 -- dir 0 = N
 --         +z
@@ -92,10 +96,47 @@ function GoToLocation(x, y, z)
     FaceDirection(NORTH)
 end
 
+function SaveStoppingPoint()
+    StoppedPos.x = LocalPos.x
+    StoppedPos.y = LocalPos.y
+    StoppedPos.z = LocalPos.z
+    StoppedPos.dir = LocalPos.dir
+end
+
+function PrintPos()
+    print("Pos: ", LocalPos.x, ", ", LocalPos.y, ", ", LocalPos.z)
+end
+--endregion
+
+--region Utility
+function GetEmptySlots()
+    local selectedSlot = turtle.getSelectedSlot()
+    local emptySlots = 16
+    for i = 1, 16, 1 do
+        turtle.select(i)
+        if turtle.getItemCount() > 0 then
+            emptySlots = emptySlots - 1
+        end
+    end
+    turtle.select(selectedSlot)
+    return emptySlots
+end
+
+function TableContains(table, value)
+    for i = 1, #table do
+      if (table[i] == value) then
+        return true
+      end
+    end
+    return false
+end
+--endregion
+
+--region Digging
 function DigAround()
     while turtle.dig() do end
     while turtle.digUp() do end
-    while turtle.digDown() do end
+    turtle.digDown()
 end
 
 function DigPath(dist)
@@ -132,28 +173,21 @@ function DigLayer(length, width)
         print("doing weired stuff", length - 1)
     end
 end
+--endregion
+
 
 function ShouldReturn()
     local isLowOnFuel = turtle.getFuelLevel() < Length + Width + Depth + 200
-    local emptySlots = 16
-    for i = 1, 16, 1 do
-        turtle.select(i)
-        if turtle.getItemCount() > 0 then
-            emptySlots = emptySlots - 1
-        end
-    end
-    turtle.select(1)
-    return true
-    --return isLowOnFuel or emptySlots < 3
+    return isLowOnFuel or GetEmptySlots() < 3
 end
 
 function PullItem(targetSlot)
     -- Assumes already facing target chest
     turtle.select(targetSlot)
     local count = turtle.getItemCount()
-    while turtle.getItemCount() < 64 do
-        turtle.suck(1)
-        if turtle.getItemCount() ~= count + 1 then
+    while turtle.getItemCount() < 48 do
+        turtle.suck(16)
+        if turtle.getItemCount() ~= count + 16 then
             break
         end
         count = count + 1
@@ -162,19 +196,26 @@ end
 
 function Refuel()
     -- Turn left, suck items
-    print("sucking fuel")
+    print("Refueling")
     Left()
-    while turtle.getFuelLevel() < 10000 do
+    local fuelLimit = turtle.getFuelLimit() - 1000
+    while turtle.getFuelLevel() < fuelLimit do
         PullItem(1)
         turtle.refuel()
     end
+    -- Drop extra fuel back into chest
+    turtle.select(1)
+    turtle.drop()
+    turtle.select(2)
+    turtle.drop()
+
     Right()
 end
 
 function Depot()
     Right()
     Right()
-    for i = 1, 16, 1 do
+    for i = 16, 1, -1 do
         turtle.select(i)
         turtle.drop()
     end
@@ -182,87 +223,48 @@ function Depot()
     Left()
 end
 
-function SaveStoppingPoint()
-    StoppedPos.x = LocalPos.x
-    StoppedPos.y = LocalPos.y
-    StoppedPos.z = LocalPos.z
-    StoppedPos.dir = LocalPos.dir
-end
-
-function GoHome()
-    GoToLocation(0, 0, 0)
-end
-
 Trash = {
     "minecraft:cobblestone",
     "minecraft:dirt",
     "minecraft:gravel",
-    "minecraft:granite",
-    "minecraft:gravel",
-    "minecraft:gravel",
+    "minecraft:andesite",
+    "minecraft:diorite",
+    "minecraft:deepslate",
+    "minecraft:dripstone_block",
 }
-
-function TableContains(table, value)
-    for i = 1, #table do
-      if (table[i] == value) then
-        return true
-      end
-    end
-    return false
-end
 
 function Dump()
     -- get item in each slot
     for i = 1, 16, 1 do
         turtle.select(i)
-        if turtle.getItemDetail() ~= nil then
-            print(turtle.getItemDetail().name)
-            if TableContains(Trash, turtle.getItemDetail().name) then
+        local itemDetails = turtle.getItemDetail(i)
+        if itemDetails ~= nil then
+            if TableContains(Trash, itemDetails.name) then
                 turtle.dropDown()
             end
         end
     end
 end
 
-function PrintPos()
-    print("Pos: ", LocalPos.x, ", ", LocalPos.y, ", ", LocalPos.z)
-end
 
-
-Length, Width, Depth = ...
-
--- set length/width from arguments
-
--- setup position and direction
---                x, y, z
--- dir 0 = N
---         +z
--- dir 1 = E
---         +x
--- dir 2 = S
---         -z
--- dir 3 = W
---         -x
-StoppedPos = {x = 0, y = 0, z = 0, dir = NORTH}
-
-LocalPos = {x = 0, y = 0, z = 0, dir = NORTH}
+Length, Width, Depth, Resume = ...
 
 function Main()
+    if Resume == nil then
+        Resume = 0
+    end
     local depthPasses = math.floor(Depth / 3)
     local extraDepth = Depth % 3
 
-    for i = 0, depthPasses - 1, 1 do
-        DigLayer(Length, Width)
+    for i = Resume, depthPasses - 1, 1 do
+        print("Starting layer ", Resume)
         GoToLocation(0, -i * 3, 0)
+        DigLayer(Length, Width)
         if ShouldReturn() then
-            PrintPos()
             SaveStoppingPoint()
-            PrintPos()
-            GoHome()
-            PrintPos()
+            GoToLocation(0, 0, 0)
             Depot()
             Refuel()
-            Depot()
             GoToLocation(StoppedPos.x, StoppedPos.y, StoppedPos.z)
             FaceDirection(StoppedPos.dir)
         end
