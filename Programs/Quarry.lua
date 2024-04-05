@@ -258,8 +258,10 @@ function Main()
 
     for i = Resume, depthPasses - 1, 1 do
         print("Starting layer ", Resume)
+        print("Going to 0, 0 and y = ", -i * 3)
         GoToLocation(0, -i * 3, 0)
         DigLayer(Length, Width)
+        print("Finished this layer?")
         if ShouldReturn() then
             SaveStoppingPoint()
             GoToLocation(0, 0, 0)
@@ -268,7 +270,9 @@ function Main()
             GoToLocation(StoppedPos.x, StoppedPos.y, StoppedPos.z)
             FaceDirection(StoppedPos.dir)
         end
+        GoToLocation(0, -i * 3, 0)
         if i ~= depthPasses - 1 then
+            print("On last depth pass? why are we going down?")
             Down()
             DigAround()
             Down()
