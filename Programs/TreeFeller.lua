@@ -47,7 +47,6 @@ function ChopTree()
     turtle.forward()
     turtle.turnRight()
     -- get saplings from chest to left here and select slot
-    turtle.select(2)
     turtle.forward()
     turtle.place()
     turtle.turnRight()
@@ -60,7 +59,6 @@ function ChopTree()
     turtle.forward()
     turtle.turnRight()
     turtle.place()
-    turtle.select(1)
 end
 
 function PullItem(targetSlot)
@@ -77,17 +75,12 @@ function PullItem(targetSlot)
 end
 
 function Refuel()
-    turtle.turnRight()
-    turtle.turnRight()
     print("Getting fuel...")
-    while turtle.getFuelLevel() < 1000 do
-        turtle.select(3)
-        turtle.suck(64)
-        turtle.refuel(10)
-        turtle.getFuelLevel()
+    turtle.select(2)
+    while turtle.getFuelLevel() < 1000 and turtle.getItemCount() > 1 do
+        turtle.refuel(1)
+        print(turtle.getFuelLevel())
     end
-    turtle.turnLeft()
-    turtle.turnLeft()
 end
 
 function Restock()
@@ -95,28 +88,24 @@ function Restock()
     -- Turn left, suck items
     turtle.turnLeft()
     -- suck bonemeal
-    print("Getting bonemeal...")
-    while turtle.getItemCount(1) < 64 do
-        turtle.suck(64)
-    end
+    --print("Getting bonemeal...")
+    --while turtle.getItemCount(1) < 64 do
+    --    PullItem(1)
+    --end
     -- suck saplings
     print("Getting saplings...")
-    while turtle.getItemCount(2) < 16 do
-        turtle.suck(64)
+    while turtle.getItemCount(2) < 5 do
+        PullItem(1)
     end
     turtle.turnRight()
 end
 
 function Depot()
-    turtle.turnRight()
-    turtle.turnRight()
-    for i = 4, 16, 1 do
+    for i = 3, 16, 1 do
         turtle.select(i)
-        turtle.drop()
+        turtle.dropDown()
     end
     turtle.select(1)
-    turtle.turnLeft()
-    turtle.turnLeft()
 end
 
 function Main()
@@ -131,8 +120,9 @@ function Main()
             Refuel()
             print("Depoting")
             Depot()
+            os.sleep(60)
         else
-            turtle.place()
+            os.sleep(5)
         end
     end
 end

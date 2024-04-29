@@ -110,6 +110,7 @@ end
 
 --region Utility
 function GetEmptySlots()
+    print("Getting empty slots.")
     local selectedSlot = turtle.getSelectedSlot()
     local emptySlots = 16
     for i = 1, 16, 1 do
@@ -177,7 +178,7 @@ end
 
 
 function ShouldReturn()
-    local isLowOnFuel = turtle.getFuelLevel() < Length + Width + Depth + 200
+    local isLowOnFuel = turtle.getFuelLevel() < Length + Width + Depth + 200 + (Width * Length)
     return isLowOnFuel or GetEmptySlots() < 3
 end
 
@@ -230,6 +231,8 @@ Trash = {
     "minecraft:andesite",
     "minecraft:diorite",
     "minecraft:deepslate",
+    "minecraft:cobbled_deepslate",
+    "minecraft:tuff",
     "minecraft:dripstone_block",
 }
 
@@ -257,22 +260,17 @@ function Main()
     local extraDepth = Depth % 3
 
     for i = Resume, depthPasses - 1, 1 do
-        print("Starting layer ", Resume)
+        print("Starting layer ", i)
         print("Going to 0, 0 and y = ", -i * 3)
         GoToLocation(0, -i * 3, 0)
         DigLayer(Length, Width)
-        print("Finished this layer?")
         if ShouldReturn() then
-            SaveStoppingPoint()
             GoToLocation(0, 0, 0)
             Depot()
             Refuel()
-            GoToLocation(StoppedPos.x, StoppedPos.y, StoppedPos.z)
-            FaceDirection(StoppedPos.dir)
         end
         GoToLocation(0, -i * 3, 0)
         if i ~= depthPasses - 1 then
-            print("On last depth pass? why are we going down?")
             Down()
             DigAround()
             Down()
