@@ -7,6 +7,7 @@ WEST = 3
 StoppedPos = {x = 0, y = 0, z = 0, dir = NORTH}
 LocalPos = {x = 0, y = 0, z = 0, dir = NORTH}
 
+
 -- dir 0 = N
 --         +z
 -- dir 1 = E
@@ -106,6 +107,7 @@ end
 function PrintPos()
     print("Pos: ", LocalPos.x, ", ", LocalPos.y, ", ", LocalPos.z)
 end
+
 --endregion
 
 Automata = peripheral.wrap("left")

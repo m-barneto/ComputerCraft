@@ -1,18 +1,28 @@
-local p = peripheral.wrap("left")
+Action = ...
 
-local captured = p.getCaptured()
+if Action == nil then
+    Action = "block"
+end
+
+P = peripheral.find("endAutomata")
+if P == nil then
+    print("Unable to find end automata!")
+    shell.exit()
+end
+
+local captured = P.getCaptured()
 
 if next(captured) == nil then
     
-    local cd = p.getCooldown("capture")
+    local cd = P.getCooldown("capture")
 
     while cd ~= 0 do
         print("Capture on cooldown for " .. cd / 1000 .. " seconds")
-        cd = p.getCooldown("capture")
+        cd = P.getCooldown("capture")
         sleep(.5)
     end
 
-    local success, res = p.capture("block")
+    local success, res = P.capture(Action)
     if success then
         print("Success!")
     else
@@ -20,7 +30,7 @@ if next(captured) == nil then
         print(res)
     end
 else
-    local success, res = p.release()
+    local success, res = P.release()
     if success then
         print("Success!")
     else
