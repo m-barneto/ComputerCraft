@@ -94,7 +94,7 @@ function Restock()
     --end
     -- suck saplings
     print("Getting saplings...")
-    while turtle.getItemCount(2) < 5 do
+    while turtle.getItemCount(2) < 32 do
         PullItem(1)
     end
     turtle.turnRight()

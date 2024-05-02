@@ -1,19 +1,3 @@
-
-function IsPumpkinBelow()
-	local success, data = turtle.inspectDown()
-	--if success then
-	--	return data.state.age == 7
-	--else
-	--	return false
-	--end
-	if data.name == "minecraft:pumpkin" then
-		return true
-	else
-		return false
-	end
-end
-
-
 --region Navigation
 NORTH = 0
 EAST = 1
@@ -124,17 +108,34 @@ function PrintPos()
 end
 --endregion
 
+function CheckIfPumpkinBelow()
+	local success, data = turtle.inspectDown()
+	--if success then
+	--	return data.state.age == 7
+	--else
+	--	return false
+	--end
+	if data.name == "minecraft:pumpkin" then
+		return true
+	else
+		return false
+	end
+end
+
 function FarmPath(dist)
-    for i = 0, dist - 1, 1 do
-        if IsPumpkinBelow() then
+    for i = 1, dist - 1, 1 do
+        if CheckIfPumpkinBelow() then
 			turtle.digDown()
 		end
-        Forward()
+		Forward()
     end
+	if CheckIfPumpkinBelow() then
+		turtle.digDown()
+	end
 end
 
 function FarmLayer(length, width)
-    for w = 0, (width / 2) - 1, 1 do
+    for w = 0, (width / 4) - 1, 1 do
         -- dig in line of length
         FarmPath(length)
         -- turn right
@@ -144,6 +145,8 @@ function FarmLayer(length, width)
         FarmPath(length)
         -- turn left
         Left()
+        Forward()
+        Forward()
         Forward()
         Left()
     end
@@ -167,7 +170,7 @@ function Main()
         FarmLayer(Length, Width)
         GoToLocation(0, 0, 0)
         Depot()
-        sleep(900)
+        sleep(3600)
     end
 end
 
