@@ -1,40 +1,50 @@
 Action = ...
 
-if Action == nil then
-    Action = "block"
-end
+function Main()
+    if Action == nil then
+        Action = "block"
+    end
 
-P = peripheral.find("endAutomata")
-if P == nil then
-    print("Unable to find end automata!")
-    shell.exit()
-end
 
-local captured = P.getCaptured()
-
-if next(captured) == nil then
     
-    local cd = P.getCooldown("capture")
-
-    while cd ~= 0 do
-        print("Capture on cooldown for " .. cd / 1000 .. " seconds")
-        cd = P.getCooldown("capture")
-        sleep(.5)
+    local p = peripheral.find("endAutomata")
+    if Action == "entity" then
+        p = peripheral.find("protectiveAutomata")
     end
 
-    local success, res = P.capture(Action)
-    if success then
-        print("Success!")
-    else
-        print("Failed!")
-        print(res)
+    if p == nil then
+        print("Unable to find automata!")
+        return
     end
-else
-    local success, res = P.release()
-    if success then
-        print("Success!")
+    
+    local captured = p.getCaptured()
+    
+    if next(captured) == nil then
+        
+        local cd = p.getCooldown("capture")
+    
+        while cd ~= 0 do
+            print("Capture on cooldown for " .. cd / 1000 .. " seconds")
+            cd = p.getCooldown("capture")
+            sleep(.5)
+        end
+    
+        local success, res = p.capture(Action)
+        if success then
+            print("Success!")
+        else
+            print("Failed!")
+            print(res)
+        end
     else
-        print("Failed!")
-        print(res)
+        local success, res = p.release()
+        if success then
+            print("Success!")
+        else
+            print("Failed!")
+            print(res)
+        end
     end
 end
+
+Main()

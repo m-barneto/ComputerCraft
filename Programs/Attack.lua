@@ -1,24 +1,29 @@
-P = peripheral.find("protectiveAutomata")
-if P == nil then
-    print("Unable to find protective automata!")
-    shell.exit()
-end
-
-turtle.select(1)
-
-while true do
-    if turtle.getItemDetail(1, true).durability <= 0.1 then
-        print("Low durability!")
-        break
+function Main()
+    local p = peripheral.find("protectiveAutomata")
+    if p == nil then
+        print("Unable to find protective automata!")
+        return
     end
 
+    turtle.select(1)
 
-    local cd = P.getCooldown("swing")
+    while true do
+        local sword = turtle.getItemDetail(1, true)
+        if sword.durability ~= nil and sword.durability <= 0.1 then
+            print("Low durability!")
+            break
+        end
 
-    while cd ~= 0 do
-        cd = P.getCooldown("swing")
-        sleep(cd / 1000)
+
+        local cd = p.getCooldown("swing")
+
+        while cd ~= 0 do
+            cd = p.getCooldown("swing")
+            sleep(cd / 1000)
+        end
+
+        p.swing("entity")
     end
-
-    P.swing("entity")
 end
+
+Main()
