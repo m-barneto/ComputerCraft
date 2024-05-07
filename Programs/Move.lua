@@ -26,12 +26,13 @@ function Main()
         while cd ~= 0 do
             print("Capture on cooldown for " .. cd / 1000 .. " seconds")
             cd = p.getCooldown("capture")
-            sleep(.5)
+            sleep(.25)
         end
     
         local success, res = p.capture(Action)
         if success then
             print("Success!")
+            os.setComputerLabel(p.getCaptured()["displayName"])
         else
             print("Failed!")
             print(res)
@@ -39,6 +40,7 @@ function Main()
     else
         local success, res = p.release()
         if success then
+            os.setComputerLabel("Mover")
             print("Success!")
         else
             print("Failed!")

@@ -17,100 +17,77 @@ function GetPlayer()
     return nil
 end
 
-function GetClosestTargetBlock()
+function GetTargetBlocks()
     WaitForScan()
-    blocks = Scanner.scan("block", Range)
-    if blocks == nil then
+    scanResult = Scanner.scan("block", tonumber(Range))
+    if scanResult == nil then
         return nil
     end
 
-    for index, value in ipairs(blocks) do
+    local blocks = {}
+
+    for index, value in ipairs(scanResult) do
         if value["name"] == BlockId then
-            return value
+            local block = {}
+            block["x"] = value["x"]
+            block["y"] = value["y"]
+            block["z"] = value["z"]
+            table.insert(blocks, block)
         end
     end
+
+    return blocks
 end
 
-function GetCardinal(angle)
-    -- angle is -180 - 180
-    angle = angle + 180
-    -- angle is 0 - 360
-    angle = tonumber(string.format("%.f", (angle / 90))) % 4
-    
-    return tonumber(string.format("%.f", angle))
-end
+function TranslateToTerminal(width, height, block)
+    -- 1 <-> width
+    -- 1 <-> height
 
-function GetDirection(x, y, z)
-    return math.deg(math.atan2(x, z))
-end
+    local half = math.floor(width / 2)
 
-function GetAngleToBlock(player, block)
-    --local blockAngle = GetDirection(block["x"], 0, block["z"])
-    --local blockCardinal = GetCardinal(blockAngle)
+    -- translate x,z from 0 - range to 0 - 1 and mult to fit half terminal width
+    --local scaledX = math.floor(block["x"] / Range * half)
+    --local scaledY = math.floor(block["z"] / Range * half)
 
-    --local angle = player["yRot"]
-
-    --local finalAngle = (blockAngle + 90) + (blockCardinal * 90) - (angle + 90)
-    --return finalAngle
-
-    
-
-
+    -- add to center
+    local x = half - block["x"]
+    local y = half + block["z"]
+    return x, y
 end
 
 function Scan()
-    local player = GetPlayer()
-    if player == nil then
-        return
-    end
+    --local player = GetPlayer()
+    --if player == nil then
+    --    return
+    --end
     
-    local block = GetClosestTargetBlock()
-    if block == nil then
+    local blocks = GetTargetBlocks()
+    if blocks == nil then
         return
     end
-
-    --local angle = GetAngleToBlock(player, block) + 180
-
 
     term.setBackgroundColor(colors.black)
     term.clear()
 
     w, h = term.getSize()
-    cx = math.floor(w / 2)
-    cy = math.floor(h / 2)
+    local half = math.floor(w / 2)
 
-    --local dirX = math.cos(math.rad(angle)) * (h / 2 - 1)
-    --local dirY = math.sin(math.rad(angle)) * (h / 2 - 1)
-
-    --paintutils.drawLine(cx, cy, cx + dirX, cy + dirY, colors.white)
-
-    paintutils.drawPixel(cx, cy, colors.blue)
-    paintutils.drawPixel(0, 0, colors.red)
-
-    paintutils.drawPixel(cx + block["z"], cy - block["x"], colors.green)
-    local angle = GetDirection(block["x"], 0, block["z"])
-    term.setCursorPos(1, 1)
-    term.write(angle)
-    term.setCursorPos(1, 2)
-    term.write(90 - (player["yRot"] % 90))
-    term.setCursorPos(1, 3)
-    term.write(angle + ((player["yRot"] % 90) - 90))
-
-    local adjAngleRad = math.rad(angle + ((player["yRot"] % 90) - 90) + 90)
-
-    local xDir = math.cos(adjAngleRad) * 5
-    local yDir = math.sin(adjAngleRad) * 5
-
-    paintutils.drawLine(cx, cy, cx + xDir, cy - yDir)
-
-    -- 97 - 90 - 89
-    --    7    -1
-    --   90 - 
+    for index, block in ipairs(blocks) do
+        local x, y = TranslateToTerminal(w, h, block)
+        local color = colors.purple
+        if tonumber(block["y"]) > 0 then
+            color = colors.red
+        elseif tonumber(block["y"]) < 0 then
+            color = colors.blue
+        end
+        paintutils.drawPixel(y, x, color)
+    end
+    
+    paintutils.drawPixel(half, half, colors.blue)
 end
 
 Scanner = peripheral.find("universal_scanner")
-BlockId = "bedrock"
-Range = 8
+BlockId, Range = ...
 
 -- shoudl scan = yRot <= 135
 
