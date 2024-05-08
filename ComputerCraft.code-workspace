@@ -48,5 +48,6 @@
         	"undefined-field",
         	"deprecated"
     	],
+		"craftos-pc.executablePath.windows": "C:\\Users\\pc\\AppData\\Local\\CraftOS-PC\\CraftOS-PC_console.exe"
 	}
 }
