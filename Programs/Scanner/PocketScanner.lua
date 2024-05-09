@@ -6,7 +6,7 @@ end
 
 function GetTargetBlocks(targetBlock)
     WaitForScan()
-    scanResult = Scanner.scan("block", 12)
+    local scanResult = Scanner.scan("block", 12)
     if scanResult == nil then
         return nil
     end
@@ -14,7 +14,7 @@ function GetTargetBlocks(targetBlock)
     local blocks = {}
 
     for index, value in ipairs(scanResult) do
-        if value["name"] == BlockId then
+        if value["name"] == targetBlock then
             local block = {}
             block["x"] = value["x"]
             block["y"] = value["y"]
@@ -24,6 +24,20 @@ function GetTargetBlocks(targetBlock)
     end
 
     return blocks
+end
+
+function SetupScanner()
+    peripheral.find("modem", rednet.open)
+    -- send ping to server
+    while true do
+        rednet.broadcast("ping", "scanner_server")
+        local id, msg = rednet.receive("scanner_client", .2)
+        if id then
+            -- message recieved, exit and process msg which should be this pcs offset
+            print("Ack! " .. msg)
+            break
+        end
+    end
 end
 
 
@@ -43,6 +57,7 @@ function Main()
 
     while true do
         -- Align ourselves to the next second
+        -- replace pocketid * .1 with actual offset, *.1 thing was stupid
         sleep(((os.epoch("utc") % 1000) / 1000) + (PocketId * .1))
         local blocks = GetTargetBlocks(targetBlock)
         if blocks ~= nil then

@@ -1,5 +1,0 @@
-function Main()
-
-end
-
-Main()
