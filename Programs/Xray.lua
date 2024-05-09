@@ -3,20 +3,6 @@ function WaitForScan()
     sleep(Scanner.getCooldown("portableUniversalScan") / 1000)
 end
 
-function GetPlayer()
-    WaitForScan()
-    players = Scanner.scan("player", 1)
-    while players == nil do
-        print("players was nil")
-        WaitForScan()
-        players = Scanner.scan("player", 2)
-    end
-    for index, value in ipairs(players) do
-        return value
-    end
-    return nil
-end
-
 function GetTargetBlocks()
     WaitForScan()
     scanResult = Scanner.scan("block", tonumber(Range))
