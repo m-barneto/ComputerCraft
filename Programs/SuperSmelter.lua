@@ -1,3 +1,5 @@
+
+
 function Distribute(from, furnaces, filter, targetSlot)
     local matchingItems = {}
     local totalCount = 0
@@ -17,48 +19,101 @@ function Distribute(from, furnaces, filter, targetSlot)
         ::continue::
     end
     
+    local chestSlot = 0
     for i, count in pairs(matchingItems) do
-        print(i)
+        chestSlot = i
     end
 
-    if #matchingItems <= 0 then
+    if chestSlot <= 0 then
         return false
     end
-    local moveCount = 0
+
+    local didWork = false
     for i, furnace in pairs(furnaces) do
-        if matchingItems[#matchingItems] == nil or matchingItems[#matchingItems] <= 0 then
-            table.remove(matchingItems, #matchingItems)
+        if matchingItems[chestSlot] == nil or matchingItems[chestSlot] <= 0 then
+            table.remove(matchingItems, chestSlot)
+            chestSlot = 0
+            for i, count in pairs(matchingItems) do
+                chestSlot = i
+            end
+            if chestSlot <= 0 then
+                return false
+            end
         end
-        local chestSlot = #matchingItems
-        print(chestSlot)
-        moveCount = moveCount + from.pushItems(peripheral.getName(furnace), chestSlot, 1, targetSlot)
-        --furnace.pullItems(peripheral.getName(from), chestSlot, 1, targetSlot)
+        local pushResult = from.pushItems(peripheral.getName(furnace), chestSlot, 1, targetSlot)
+        if pushResult ~= nil and pushResult > 0 then
+            didWork = true
+        end
     end
-    return moveCount > 0
+    return didWork
 end
 
 function Collect(outputChest, furnaces, fuelChest)
-    local movedCount = 0
+    local didWork = false
     for i, furnace in pairs(furnaces) do
         if fuelChest ~= nil then
             -- Get item in slot 3
-            local out = furnace.list()[3]
-            if out ~= nil then
+            local furnaceItems = furnace.list()
+            if furnaceItems ~= nil and furnaceItems[3] ~= nil then
                 
-                if string.find(out.name, "coal") then
-                    movedCount = movedCount + fuelChest.pullItems(peripheral.getName(furnace), 3)
+                if string.find(furnaceItems[3].name, "coal") then
+                    local pullResult = fuelChest.pullItems(peripheral.getName(furnace), 3)
+                    if pullResult ~= nil and pullResult > 0 then
+                        didWork = true
+                    end
                 else
-                    movedCount = movedCount + outputChest.pullItems(peripheral.getName(furnace), 3)
+                    local pullResult = outputChest.pullItems(peripheral.getName(furnace), 3)
+                    if pullResult ~= nil and pullResult > 0 then
+                        didWork = true
+                    end
                 end
             end
         else
-            movedCount = movedCount + outputChest.pullItems(peripheral.getName(furnace), 3)
+            local pullResult = outputChest.pullItems(peripheral.getName(furnace), 3)
+            if pullResult ~= nil and pullResult > 0 then
+                didWork = true
+            end
         end
     end
-    return movedCount > 0
+    return didWork
 end
 
 function Main()
+    local configPath = "smelter.conf"
+    local config = {}
+    if fs.exists(configPath) then
+        local configFile = fs.open(configPath, "r")
+        local contents = configFile.readAll()
+        configFile.close()
+
+        config = textutils.unserialise(contents)
+    else
+        config["inputChest"] = "InputChest"
+        config["outputChest"] = "OutputChest"
+        config["fuelChest"] = "FuelChest"
+        local configFile = fs.open(configPath, "w")
+        configFile.write(textutils.serialise(config))
+        configFile.close()
+        print("Please fill out " .. configPath)
+        return
+    end
+    
+    local inputChest = peripheral.wrap(config["inputChest"])
+    local outputChest = peripheral.wrap(config["outputChest"])
+    local fuelChest = peripheral.wrap(config["fuelChest"])
+    if inputChest == nil then
+        print("Unable to locate input chest at " .. config["inputChest"])
+        return
+    end
+    if outputChest == nil then
+        print("Unable to locate output chest at " .. config["outputChest"])
+        return
+    end
+    if fuelChest == nil then
+        print("Unable to locate fuel chest at " .. config["fuelChest"])
+        return
+    end
+
     local pNames = peripheral.getNames()
     local furnaces = {}
     for i, pName in pairs(pNames) do
@@ -68,15 +123,11 @@ function Main()
         end
     end
 
-    local inputChest = "ironchest:iron_chest_8"
-    local fuelChest = "minecraft:barrel_0"
-    local outputChest = "ironchest:iron_chest_9"
-
     while true do
         local didWork = false
-        didWork = Distribute(peripheral.wrap(inputChest), furnaces, nil, 1)
-        didWork = didWork or Distribute(peripheral.wrap(fuelChest), furnaces, nil, 2)
-        didWork = didWork or Collect(peripheral.wrap(outputChest), furnaces, peripheral.wrap(fuelChest))
+        didWork = Distribute(inputChest, furnaces, nil, 1)
+        didWork = didWork or Distribute(fuelChest, furnaces, nil, 2)
+        didWork = didWork or Collect(outputChest, furnaces, fuelChest)
         if not didWork then
             print("sleeping for 1")
             os.sleep(1)
