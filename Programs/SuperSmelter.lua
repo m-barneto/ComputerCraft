@@ -88,9 +88,9 @@ function Main()
 
         config = textutils.unserialise(contents)
     else
-        config["inputChest"] = "InputChest"
-        config["outputChest"] = "OutputChest"
-        config["fuelChest"] = "FuelChest"
+        config["inputChest"] = ""
+        config["outputChest"] = ""
+        config["fuelChest"] = ""
         local configFile = fs.open(configPath, "w")
         configFile.write(textutils.serialise(config))
         configFile.close()
@@ -129,10 +129,7 @@ function Main()
         didWork = didWork or Distribute(fuelChest, furnaces, nil, 2)
         didWork = didWork or Collect(outputChest, furnaces, fuelChest)
         if not didWork then
-            print("sleeping for 1")
             os.sleep(1)
-        else
-            print("doing work so no sleep")
         end
     end
 end
