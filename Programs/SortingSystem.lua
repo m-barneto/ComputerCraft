@@ -1,5 +1,53 @@
-function GetChestEntryBasedOnContents(chestId)
-    print(textutils.serialise(Database["chests"][chestId]["filters"]))
+function HasValue(table, value)
+    for i, v in pairs(table) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
+
+function HasKey(table, key)
+    return table[key] ~= nil
+end
+
+function AddFilterLists(filter1, filter2)
+    local filter = {}
+
+    for i, item in pairs(filter1) do
+        table.insert(filter, item)
+    end
+    for i, item in pairs(filter2) do
+        if not HasValue(filter, item) then
+            table.insert(filter, item)
+        end
+    end
+
+    return filter
+end
+
+function GetFiltersBasedOnContents(chestId)
+    local chest = peripheral.wrap(chestId)
+    local filters = {}
+    -- iterate over items and add them to filters
+    for slot, item in pairs(chest.list()) do
+        if item ~= nil then
+            table.insert(filters, item.name)
+        else
+            print("encountered empty slot " .. slot)
+        end
+    end
+    return filters
+end
+
+function UpdateChestFilters(chestId)
+    -- get db filter
+    local dbFilter = Database["chests"][chestId]["filters"]
+    -- get content based filter
+    local contentFilter = GetFiltersBasedOnContents(chestId)
+
+    local filter = AddFilterLists(dbFilter, contentFilter)
+    Database["chests"][chestId]["filters"] = filter
 end
 
 function GetDefaultChestEntry()
@@ -30,10 +78,41 @@ function GetConfig()
     return config
 end
 
-function LoadDatabase(dbPath)
+function RescanChests()
+    -- iterate dict first and make sure each peripheral/chest is found
+    local connectedPeripherals = peripheral.getNames()
+
+    for i, chestId in pairs(connectedPeripherals) do
+        if HasKey(Database["chests"], chestId) then
+            UpdateChestFilters(chestId)
+        else
+            -- Add new chest support here!
+            if string.find(chestId, ":") and not string.find(chestId, "computer") and chestId ~= Config["inputChest"] and chestId ~= Config["overflowChest"] then
+                print("Setting up default entry for " .. chestId)
+                Database["chests"][chestId] = GetDefaultChestEntry()
+                UpdateChestFilters(chestId)
+            end
+        end
+    end
+
+    SaveDatabase()
+end
+
+function BuildRouter()
+    Router = {}
+    -- iterate over all chests in database
+    for chestId, chestData in pairs(Database["chests"]) do
+        -- iterate over the chest's filter items
+        for i, item in pairs(chestData["filters"]) do
+            Router[item] = chestId
+        end
+    end
+end
+
+function LoadDatabase()
     local database = {}
-    if fs.exists(dbPath) then
-        local dbFile = fs.open(dbPath, "r")
+    if fs.exists(DB_PATH) then
+        local dbFile = fs.open(DB_PATH, "r")
         local contents = dbFile.readAll()
         dbFile.close()
 
@@ -48,17 +127,43 @@ function LoadDatabase(dbPath)
             end
         end
         database["chests"] = chests
-        local dbFile = fs.open(dbPath, "w")
+        local dbFile = fs.open(DB_PATH, "w")
         dbFile.write(textutils.serialise(database))
         dbFile.close()
     end
     return database
 end
 
-function SaveDatabase(dbPath)
-    local dbFile = fs.open(dbPath, "w")
+function SaveDatabase()
+    local dbFile = fs.open(DB_PATH, "w")
     dbFile.write(textutils.serialise(Database))
     dbFile.close()
+end
+
+function GetItemDestination(item)
+    if HasKey(Router, item) then
+        local dest = peripheral.wrap(Router[item])
+        if dest == nil then
+            return OverflowChest
+        end
+
+        return dest
+    end
+
+    return OverflowChest
+end
+
+function HandleInputItems()
+    -- iterate over items in inputchest and find their destination
+    for slot, item in pairs(InputChest.list()) do
+        if item ~= nil then
+            local destChest = GetItemDestination(item.name)
+            destChest.pullItems(Config["inputChest"], slot)
+            print("Dest for " .. item.name .. " is " .. peripheral.getName(GetItemDestination(item.name)))
+        else
+            print("encountered empty slot " .. slot)
+        end
+    end
 end
 
 function Main()
@@ -67,26 +172,29 @@ function Main()
         return
     end
 
-    local dbPath = "sorter.db"
-    Database = LoadDatabase(dbPath)
+    DB_PATH = "sorter.db"
+    Database = LoadDatabase()
     
-    local inputChest = peripheral.wrap(Config["inputChest"])
-    
-    if inputChest == nil then
+    InputChest = peripheral.wrap(Config["inputChest"])
+    if InputChest == nil then
         print("Unable to locate input chest at " .. Config["inputChest"])
         return
     end
 
+    OverflowChest = peripheral.wrap(Config["overflowChest"])
+    if OverflowChest == nil then
+        print("Unable to locate overflow chest at " .. Config["overflowChest"])
+        return
+    end
+    
+    RescanChests()
+    BuildRouter()
+    HandleInputItems()
+
     for i, chest in pairs(peripheral.getNames()) do
         if string.find(chest, ":") and chest ~= Config["inputChest"] and chest ~= Config["overflowChest"] then
-            GetChestEntryBasedOnContents(chest)
+            --GetChestEntryBasedOnContents(chest)
         end
-    end
-
-    
-    for slot, item in pairs(inputChest.list()) do
-        local info = inputChest.getItemDetail(slot)
-        print(textutils.serialise(info))
     end
 end
 

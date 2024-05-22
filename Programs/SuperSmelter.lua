@@ -1,5 +1,4 @@
 
-
 function Distribute(from, furnaces, filter, targetSlot)
     local matchingItems = {}
     local totalCount = 0
