@@ -87,8 +87,7 @@ function RescanChests()
             UpdateChestFilters(chestId)
         else
             -- Add new chest support here!
-            if string.find(chestId, ":") and not string.find(chestId, "computer") and chestId ~= Config["inputChest"] and chestId ~= Config["overflowChest"] then
-                print("Setting up default entry for " .. chestId)
+            if string.find(chestId, ":") and not string.find(chestId, "computer") and chestId ~= Config["inputChest"] and chestId ~= Config["overflowChest"] and not HasKey(Database["chests"], chestId) then
                 Database["chests"][chestId] = GetDefaultChestEntry()
                 UpdateChestFilters(chestId)
             end
@@ -121,7 +120,7 @@ function LoadDatabase()
         -- iterate over all chests and setup their sorting
         local chests = {}
         for i, chest in pairs(peripheral.getNames()) do
-            if string.find(chest, ":") and chest ~= Config["inputChest"] and chest ~= Config["overflowChest"] then
+            if string.find(chest, ":") and chest ~= Config["inputChest"] and chest ~= Config["overflowChest"] and not HasKey(chests, chest) then
                 print("Setting up default entry for " .. chest)
                 chests[chest] = GetDefaultChestEntry()
             end
@@ -144,12 +143,12 @@ function GetItemDestination(item)
     if HasKey(Router, item) then
         local dest = peripheral.wrap(Router[item])
         if dest == nil then
+            print("dest is actually not " .. Router[item])
             return OverflowChest
         end
 
         return dest
     end
-
     return OverflowChest
 end
 
@@ -158,7 +157,7 @@ function HandleInputItems()
     for slot, item in pairs(InputChest.list()) do
         if item ~= nil then
             local destChest = GetItemDestination(item.name)
-            destChest.pullItems(Config["inputChest"], slot)
+            destChest.pullItems(Config["inputChest"], slot, item.count)
             print("Dest for " .. item.name .. " is " .. peripheral.getName(GetItemDestination(item.name)))
         else
             print("encountered empty slot " .. slot)
@@ -173,7 +172,9 @@ function Main()
     end
 
     DB_PATH = "sorter.db"
+    print("before load")
     Database = LoadDatabase()
+    print("after load")
     
     InputChest = peripheral.wrap(Config["inputChest"])
     if InputChest == nil then
