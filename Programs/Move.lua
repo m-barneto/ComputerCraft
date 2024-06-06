@@ -10,6 +10,9 @@ function Main()
     local p = peripheral.find("endAutomata")
     if Action == "entity" then
         p = peripheral.find("protectiveAutomata")
+        if p == nil then
+            p = peripheral.find("husbandryAutomata")
+        end
     end
 
     if p == nil then

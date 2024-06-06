@@ -87,7 +87,7 @@ function RescanChests()
             UpdateChestFilters(chestId)
         else
             -- Add new chest support here!
-            if string.find(chestId, ":") and not string.find(chestId, "computer") and chestId ~= Config["inputChest"] and chestId ~= Config["overflowChest"] and not HasKey(Database["chests"], chestId) then
+            if IsStorage(chestId) and not HasKey(Database["chests"], chestId) then
                 Database["chests"][chestId] = GetDefaultChestEntry()
                 UpdateChestFilters(chestId)
             end
@@ -120,7 +120,7 @@ function LoadDatabase()
         -- iterate over all chests and setup their sorting
         local chests = {}
         for i, chest in pairs(peripheral.getNames()) do
-            if string.find(chest, ":") and chest ~= Config["inputChest"] and chest ~= Config["overflowChest"] and not HasKey(chests, chest) then
+            if IsStorage(chest) and not HasKey(chests, chest) then
                 print("Setting up default entry for " .. chest)
                 chests[chest] = GetDefaultChestEntry()
             end
@@ -165,6 +165,10 @@ function HandleInputItems()
     end
 end
 
+function IsStorage(chestId)
+    return string.find(chestId, ":") and chestId ~= Config["inputChest"] and chestId ~= Config["overflowChest"] and not string.find(chestId, "computer") and not string.find(chestId, "turtle")
+end
+
 function Main()
     Config = GetConfig()
     if Config == nil then
@@ -172,9 +176,7 @@ function Main()
     end
 
     DB_PATH = "sorter.db"
-    print("before load")
     Database = LoadDatabase()
-    print("after load")
     
     InputChest = peripheral.wrap(Config["inputChest"])
     if InputChest == nil then
@@ -190,12 +192,10 @@ function Main()
     
     RescanChests()
     BuildRouter()
-    HandleInputItems()
 
-    for i, chest in pairs(peripheral.getNames()) do
-        if string.find(chest, ":") and chest ~= Config["inputChest"] and chest ~= Config["overflowChest"] then
-            --GetChestEntryBasedOnContents(chest)
-        end
+    while true do
+        HandleInputItems()
+        os.sleep(.5)
     end
 end
 
